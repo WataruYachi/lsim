@@ -2,79 +2,117 @@
 #include <gc.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <math.h>
 #include "table.h"
+#include "bit.h"
 
-#define INT_INDEX(i) (i / 32)
-#define BIT_INDEX(i) ((i % 32) * 2)
-
-row Row() {
-    return GC_MALLOC(sizeof(struct row));
-}
-
-table Table(int n, int m) {
+table Table(int m, int n) {
     table t = GC_MALLOC(sizeof(struct table));
-    t->n = n;
     t->m = m;
-    t->rows = GC_MALLOC(sizeof(struct row) * m);
+    t->n = n;
+    t->rows = GC_MALLOC(sizeof(struct bitArray) * m);
     return t;
 }
 
-void setRowValue(row r, int i, bit v) {
-    uint64_t v64 = (uint64_t)v;
-    r->r[INT_INDEX(i)] &= ~(3 << BIT_INDEX(i));
-    r->r[INT_INDEX(i)] |= (v64 << BIT_INDEX(i));
-}
-
 void setTableValue(table t, int x, int y, bit v) {
-    setRowValue(&t->rows[y], x, v);
-}
-
-bit getRowValue(row r, int i) {
-    int bi = BIT_INDEX(i);
-    int ii = r->r[INT_INDEX(i)];
-    int ui = ii & (1 << bi);
-    int li = ii & (1 << (bi+1));
-    //printf("ui:%d,li:%d,uili:%d\n", ui,li,(ui | li) >> bi);
-    return (ui | li) >> bi;
+    setBit(&t->rows[y], x, v);
 }
 
 bit getTableValue(table t, int x, int y) {
-    return getRowValue(&t->rows[y], x);
+    return getBit(&t->rows[y], x);
 }
 
-void addRow(table t, row r) {
-    GC_REALLOC(t->rows, sizeof(struct row) * t->m + 1);
-    for (int i; i < 4; i++) {
-        t->rows[t->m + 1].r[i] = r->r[i]; 
+bitArray getTableRow(table t, int y) {
+    bitArray r = BitArray();
+    for (int i = 0; i < INT_ARRAY_SIZE; i++) {
+        r->array[i] = t->rows[y].array[i];
+    }
+    return r;
+}
+
+void addTableRow(table t, bitArray r) {
+    t->rows = GC_REALLOC(t->rows, sizeof(struct bitArray) * t->m + 1);
+    for (int i = 0; i < INT_ARRAY_SIZE; i++) {
+        t->rows[t->m].array[i] = r->array[i];
     }
     t->m = t->m + 1;
 }
 
-void printRow(int n, row r) {
-    for (int i = 0; i < n; i++) {
-        printf("%d,", getRowValue(r, i));
+void setTableRow(table t, int y, bitArray r) {
+    for (int i = 0; i < INT_ARRAY_SIZE; i++) {
+        t->rows[y].array[i] = r->array[i];
     }
-    printf("\n");
 }
 
 void printTable(table t) {
     for (int i = 0; i < t->m; i++) {
-        printRow(t->n, &t->rows[i]);
+        printBitArray(t->n, &t->rows[i]);
+        printf("\n");
     }
 }
 
+
+truthTable TruthTable(unsigned int inputNum, char *inputVars[],
+                        unsigned int outputNum, char *outputVars[]) {
+    truthTable tt = GC_MALLOC(sizeof(struct truthTable));
+    int m = pow(2, inputNum);
+    tt->inputNum = inputNum;
+    tt->inputVars = inputVars;
+    tt->outputNum = outputNum;
+    tt->outputVars = outputVars;
+    tt->input = Table(m, inputNum);
+    tt->output = Table(m, outputNum);
+    return tt;
+}
+
+void setInputRow(truthTable tt, int y, bitArray r) {
+    setTableRow(tt->input, y, r);
+}
+
+void setOutputRow(truthTable tt, int y, bitArray r) {
+    setTableRow(tt->output, y, r);
+}
+
+bitArray getInputRow(truthTable tt, int y) {
+    return getTableRow(tt->input, y);
+}
+
+bitArray getOutputRow(truthTable tt, int y) {
+    return getTableRow(tt->output, y);
+}
+
+void printTruthTable(truthTable tt) {
+    for(int i = 0; i < tt->inputNum; i++) {
+        printf("%s,", tt->inputVars[i]);
+    }
+    for (int i = 0; i < tt->outputNum; i++) {
+        printf("%s,", tt->outputVars[i]);
+    }
+    printf("\n");
+
+    for(int i = 0; i < tt->input->m; i++) {
+        printBitArray(tt->input->n, getTableRow(tt->input, i));
+        printBitArray(tt->output->n, getTableRow(tt->output, i));
+        printf("\n");
+    }
+}
+
+/*
 int main () {
-    table t = Table(3,2);
+    table t = Table(2,3);
     setTableValue(t, 0, 0, F);
     setTableValue(t, 1, 0, T);
     setTableValue(t, 2, 0, X);
     setTableValue(t, 0, 1, X);
     setTableValue(t, 1, 1, X);
     setTableValue(t, 2, 1, X);
-
+    table t2 = Table(2,1);
+    setTableValue(t2, 0, 0, F);
+    setTableValue(t2, 0, 1, F);
     printTable(t);
+    printf("\n");
+    printTable(t2);
 
     return 0;
 }
-
-
+*/

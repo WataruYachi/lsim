@@ -4,7 +4,8 @@
 #include <gc.h>
 #include "gate.h"
 #include "circuit.h"
-#include "truthTable.h"
+#include "table.h"
+#include "bit.h"
 #include "qm.h"
 
 circuit halfadder() {
@@ -87,11 +88,9 @@ gate and1() {
 int main(int argc, char const *argv[]) {
     circuit ha = halfadder();
     circuit aa = andc();
-    int input[2] = {1, 1};
+    int input[2] = {T, T};
     truthTable tt = makeTruthTable(ha);
     printTruthTable(tt);
-    int *r = runCircuitWithInput(ha, 2, input);
-    //printf("%d,%d,%d,%d\n", r[0],r[1],r[2],r[3]);
     truthTable mtt = makeTruthTable(major());
     printTruthTable(mtt);
     //qm(major());

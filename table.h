@@ -5,38 +5,45 @@
 #include <gc.h>
 #include <stdint.h>
 
-// 1要素2bit
-// 00 = 0
-// 01 = 1
-// 11 = X
-
-typedef enum bit {
-    F = 0,
-    T = 1,
-    X = 3
-} bit;
-
-struct row {
-    uint64_t r[4];
-};
-
-typedef struct row *row;
+#include "bit.h"
 
 struct table {
     unsigned int n;
     unsigned int m;
-    struct row *rows;
+    bitArray rows;
 };
 
 typedef struct table *table;
 
-row Row();
-table Table(int n, int m);
+table Table(int m, int n);
 void addEmptyRow(int a);
-void addRow(table t, row r);
-void setRowValue(row r, int n, bit v);
+void addTableRow(table t, bitArray r);
+void setTableRow(table t, int y, bitArray r);
+bitArray getTableRow(table t, int y);
 void setTableValue(table t, int x, int y, bit v);
+void printTable(table t);
 
+struct truthTable {
+    unsigned int inputNum;
+    unsigned int outputNum;
+    char **inputVars;
+    char **outputVars;
+    table input;
+    table output;
+};
+
+typedef struct truthTable *truthTable;
+
+truthTable TruthTable(unsigned int inputNum, char *inputVars[],
+        unsigned int outputNum, char *outputVars[]);
+
+void setInput(truthTable tt, int x, int y, bit v);
+void setOutput(truthTable tt, int x, int y, bit v);
+void setInputRow(truthTable tt, int y, bitArray r);
+void setOutputRow(truthTable tt, int y, bitArray r);
+bitArray getInputRow(truthTable tt, int y);
+bitArray getOutputRow(truthTable tt, int y);
+void printTruthTable(truthTable tt);
 
 
 #endif

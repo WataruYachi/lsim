@@ -2,12 +2,7 @@
 #define CIRCUIT_H
 
 #include "gate.h"
-#include "truthTable.h"
-
-typedef struct {
-    char *id;
-    int v;
-} result;
+#include "table.h"
 
 struct circuit {
     char *id;
@@ -17,17 +12,10 @@ struct circuit {
     gate *output;
 };
 
-
-
 typedef struct circuit *circuit;
 
 circuit Circuit(char *, int, gate[], int, gate[]);
-result *resultArray(int n);
-int *runCircuitWithInput(circuit c, int inputNum, int *input);
-void printResult(int, result *);
-void succ(int, int*);
+bitArray runCircuitWithInput(circuit c, bitArray input);
 truthTable makeTruthTable(circuit);
-//void printTruthTable(truthTable);
-
 
 #endif

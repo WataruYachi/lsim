@@ -4,11 +4,12 @@
 #include <gc.h>
 #include "gate.h"
 #include "circuit.h"
-#include "truthTable.h"
+#include "table.h"
+#include "bit.h"
+//#include "truthTable.h"
 #include <math.h>
 
-void combination(int,int,int,int**);
-void succ(int, int *);
+void succ(int, bitArray);
 
 circuit Circuit(char *id, int inputNum, gate *input, int outputNum, gate *output) {
     circuit c = GC_MALLOC(sizeof(struct circuit));
@@ -19,28 +20,19 @@ circuit Circuit(char *id, int inputNum, gate *input, int outputNum, gate *output
     return c;
 }
 
-int *runCircuitWithInput(circuit c, int inputNum, int *input){
-    for (int i = 0; i < inputNum; i++) {
-        setGateValue(c->input[i], input[i]);
-    }
-
-    int *results = GC_MALLOC(sizeof(int) * (c->inputNum + c->outputNum));
+bitArray runCircuitWithInput(circuit c, bitArray input){
     for (int i = 0; i < c->inputNum; i++) {
-        results[i] = input[i];
+        setGateValue(c->input[i], getBit(input, i));
     }
+
+    bitArray output = BitArray();
+
     for (int i = 0; i < c->outputNum; i++) {
-        int r = evalGateValue(c->output[i]);
-        results[c->inputNum + i] = r; //evalGateValue(c->output[i]);
+        bit v = evalGateValue(c->output[i]);
+        setBit(output, i, v); //evalGateValue(c->output[i]);
     }
 
-    return results;
-}
-
-void printResult(int n, result *results) {
-    for (int i = 0; i < n; i++) {
-        printf("%s:%d ", results[i].id, results[i].v);
-    }
-    printf("\n");
+    return output;
 }
 
 truthTable makeTruthTable(circuit c) { 
@@ -57,33 +49,34 @@ truthTable makeTruthTable(circuit c) {
 
     truthTable tt = TruthTable(c->inputNum, inputVars, c->outputNum, outputVars);
 
-    int *input = GC_MALLOC(sizeof(int) * c->inputNum);
+    bitArray input = BitArray();
     for (int i = 0; i < c->inputNum; i++) {
-        input[i] = 0;
+        setBit(input, i, F);
     }
-    int *row;
 
-    for (int i = 0; i < tt->m; i++) {
-        row = runCircuitWithInput(c, c->inputNum, input);
-        setRow(tt, i, row);
+    bitArray output;
+    for (int i = 0; i < tt->input->m; i++) {
+        output = runCircuitWithInput(c, input);
+        setInputRow(tt, i, input);
+        setOutputRow(tt, i, output);
         succ(c->inputNum, input);
     }
 
     return tt;
 }
 
-void succSub(int n, int p, int *bits) {
+void succSub(int n, int p, bitArray bs) {
     if (p > n) return;
-    if (bits[n-p] == 1) {
-        bits[n-p] = 0;
-        succSub(n, p+1, bits);
+    if (getBit(bs, n-p) == T) {
+        setBit(bs, n-p, F);
+        succSub(n, p+1, bs);
     } else {
-        bits[n-p] = 1;
+        setBit(bs, n-p, T);
         return;
     }
 }
 
-void succ(int n, int *bits) {
-    succSub(n, 1, bits);
+void succ(int n, bitArray bs) {
+    succSub(n, 1, bs);
 }
 

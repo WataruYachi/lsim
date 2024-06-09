@@ -10,7 +10,7 @@ gate And(char *id, int argsNum, gate args[]) {
     g -> id = id;
     g -> argsNum = argsNum;
     g -> args = args;
-    g -> value = -1;
+    g -> value = X;
     return g;
 }
 
@@ -20,7 +20,7 @@ gate Or(char *id, int argsNum, gate args[]) {
     g -> id = id;
     g -> argsNum = argsNum;
     g -> args = args;
-    g -> value = -1;
+    g -> value = X;
     return g;
 }
 
@@ -32,7 +32,37 @@ gate Not(char *id, gate arg) {
     g -> id = id;
     g -> argsNum = 1;
     g -> args = array;
-    g -> value = -1;
+    g -> value = X;
+    return g;
+}
+
+gate Xor(char *id, int argsNum, gate args[]) {
+    gate g = GC_MALLOC(sizeof(struct gate));
+    g -> op = XOR_GATE;
+    g -> id = id;
+    g -> argsNum = argsNum;
+    g -> args = args;
+    g -> value = X;
+    return g;
+}
+
+gate Nand(char *id, int argsNum, gate args[]) {
+    gate g = GC_MALLOC(sizeof(struct gate));
+    g -> op = NAND_GATE;
+    g -> id = id;
+    g -> argsNum = argsNum;
+    g -> args = args;
+    g -> value = X;
+    return g;
+}
+
+gate Nor(char *id, int argsNum, gate args[]) {
+    gate g = GC_MALLOC(sizeof(struct gate));
+    g -> op = NOR_GATE;
+    g -> id = id;
+    g -> argsNum = argsNum;
+    g -> args = args;
+    g -> value = X;
     return g;
 }
 
@@ -42,7 +72,7 @@ gate Input(char *id) {
     g -> id = id;
     g -> argsNum = 0;
     g -> args = NULL;
-    g -> value = -1;
+    g -> value = X;
     return g;
 }
 
@@ -54,7 +84,7 @@ gate Output(char *id, gate arg) {
     g -> id = id;
     g -> argsNum = 1;
     g -> args = array;
-    g -> value = -1;
+    g -> value = X;
     return g;
 }
 
@@ -88,6 +118,15 @@ void printGate(gate g) {
         case NOT_GATE:
             operator = "NOT_GATE";
             break;
+        case XOR_GATE:
+            operator = "XOR_GATE";
+            break;
+        case NAND_GATE:
+            operator = "NAND_GATE";
+            break;
+        case NOR_GATE:
+            operator = "NOR_GATE";
+            break;
         case INPUT_GATE:
             operator = "INPUT_GATE";
             break;
@@ -110,7 +149,7 @@ int evalGateValue(gate g){
         return g->value;
     }
     */
-    int *argsValues = GC_MALLOC(sizeof(int) * g->argsNum);
+    int *argsValues = GC_MALLOC(sizeof(bit) * g->argsNum);
     
     for (int i = 0; i < g->argsNum; i++) {
         argsValues[i] = evalGateValue(g->args[i]);
@@ -121,40 +160,99 @@ int evalGateValue(gate g){
     int nx;
     switch (g->op) {
         case AND_GATE:
-            v = 1;
+            v = T;
             nx = 0;
             for (int i = 0; i < g->argsNum; i++) {
-                if (argsValues[i] == 0) {
-                    v = 0;
+                if (argsValues[i] == F) {
+                    v = F;
                     break;
-                } else if (argsValues[i] == -1) {
+                } else if (argsValues[i] == X) {
                     nx = 1;
                 }
             }
-            if (v && nx)
-                v = -1;
+            if (v == T && nx)
+                v = X;
             break;
 
         case OR_GATE:
-            v = 0;
+            v = F;
             nx = 0;
             for (int i = 0; i < g->argsNum; i++) {
-                if (argsValues[i] == 1) {
-                    v = 1;
+                if (argsValues[i] == T) {
+                    v = T;
                     break;
                 } else if (argsValues[i] == -1) {
                     nx = 1;
                 }
             }
-            if (!v && nx)
-                v = -1; 
+            if (v == F && nx)
+                v = X; 
             break;
 
         case NOT_GATE:
-            if (argsValues[0] == -1) {
-                v = -1;
+            if (argsValues[0] == X) {
+                v = X;
+            } else if (argsValues[0] == T) {
+                v = F;
             } else {
-                v = 1 - argsValues[0];
+                v = T;
+            }
+            break;
+
+        case XOR_GATE:
+            int nt = 0;
+            for (int i = 0; i < g->argsNum; i++) {
+                if (argsValues[i] == X) {
+                    v = X;
+                    break;
+                } else if (argsValues[i] == T) {
+                    nt++;
+                }
+            } 
+            if (nt % 2 == 0) {
+                v = F;
+            } else {
+                v = T;
+            } 
+            break;
+
+        case NAND_GATE:
+            v = T;
+            nx = 0;
+            for (int i = 0; i < g->argsNum; i++) {
+                if (argsValues[i] == F) {
+                    v = F;
+                    break;
+                } else if (argsValues[i] == X) {
+                    nx = 1;
+                }
+            }
+            if (v == T && nx) {
+                v = X;
+            } else if (v == F) {
+                v = T;
+            } else {
+                v = F;
+            }
+            break;
+
+        case NOR_GATE:
+            v = F;
+            nx = 0;
+            for (int i = 0; i < g->argsNum; i++) {
+                if (argsValues[i] == T) {
+                    v = T;
+                    break;
+                } else if (argsValues[i] == -1) {
+                    nx = 1;
+                }
+            }
+            if (v == F && nx) {
+                v = X; 
+            } else if (v == T) {
+                v = F;
+            } else {
+                v = T;
             }
             break;
 
@@ -173,7 +271,7 @@ int evalGateValue(gate g){
     return g->value;
 }
 
-void setGateValue(gate g, int v){
+void setGateValue(gate g, bit v){
     g->value = v;
 }
 

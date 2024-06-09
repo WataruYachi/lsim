@@ -3,7 +3,8 @@
 
 #include "circuit.h"
 
-circuit qm(circuit c);
+table qm(table t);
+table minimalizeCircuit(circuit c);
 void qmsample(circuit c);
 
 #endif
