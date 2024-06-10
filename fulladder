@@ -1,0 +1,6 @@
+circuit fullAdder(x, y, cn) {
+    let s = xor($x,$y,$cn)
+    let cout = or(and($x,$y), and($y, $cn), and($x, $cn))
+    output($s)
+    output($cout)
+}

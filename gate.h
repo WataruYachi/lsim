@@ -27,6 +27,7 @@ gate Output(char *, gate);
 
 void printGate(gate);
 gate *gateArray(int);
+gate *addArray(int, gate *, gate);
 gate *inputArray(int, char **);
 int evalGateValue(gate);
 void setGateValue(gate, bit);

@@ -13,6 +13,7 @@ void succ(int, bitArray);
 
 circuit Circuit(char *id, int inputNum, gate *input, int outputNum, gate *output) {
     circuit c = GC_MALLOC(sizeof(struct circuit));
+    c->id = id;
     c->inputNum = inputNum;
     c->input = input;
     c->outputNum = outputNum;
@@ -79,4 +80,20 @@ void succSub(int n, int p, bitArray bs) {
 void succ(int n, bitArray bs) {
     succSub(n, 1, bs);
 }
+
+
+void printCircuit(circuit c) {
+    printf("circuit:");
+    printf("%s\n", c->id);
+    printf("input\n");
+    for (int i = 0; i < c->inputNum; i++) {
+        printGate(c->input[i]);
+    }
+    printf("output\n");
+    for (int i = 0; i < c->outputNum; i++) {
+        printGate(c->output[i]);
+    }
+}
+
+
 

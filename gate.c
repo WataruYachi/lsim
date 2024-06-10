@@ -3,11 +3,14 @@
 #include <stdlib.h>
 #include <gc.h>
 #include "gate.h"
+#include <string.h>
 
 gate And(char *id, int argsNum, gate args[]) {
     gate g = GC_MALLOC(sizeof(struct gate));
+    char *buf = GC_MALLOC(sizeof(char) * (strlen(id) + 1));
+    strcpy(buf, id);
     g -> op = AND_GATE;
-    g -> id = id;
+    g -> id = buf;
     g -> argsNum = argsNum;
     g -> args = args;
     g -> value = X;
@@ -16,8 +19,10 @@ gate And(char *id, int argsNum, gate args[]) {
 
 gate Or(char *id, int argsNum, gate args[]) {
     gate g = GC_MALLOC(sizeof(struct gate));
+    char *buf = GC_MALLOC(sizeof(char) * (strlen(id) + 1));
+    strcpy(buf, id);
     g -> op = OR_GATE;
-    g -> id = id;
+    g -> id = buf;
     g -> argsNum = argsNum;
     g -> args = args;
     g -> value = X;
@@ -26,10 +31,12 @@ gate Or(char *id, int argsNum, gate args[]) {
 
 gate Not(char *id, gate arg) {
     gate g = GC_MALLOC(sizeof(struct gate));
+    char *buf = GC_MALLOC(sizeof(char) * (strlen(id) + 1));
+    strcpy(buf, id);
     gate *array = gateArray(1);
     array[0] = arg;
     g -> op = NOT_GATE;
-    g -> id = id;
+    g -> id = buf;
     g -> argsNum = 1;
     g -> args = array;
     g -> value = X;
@@ -38,8 +45,10 @@ gate Not(char *id, gate arg) {
 
 gate Xor(char *id, int argsNum, gate args[]) {
     gate g = GC_MALLOC(sizeof(struct gate));
+    char *buf = GC_MALLOC(sizeof(char) * (strlen(id) + 1));
+    strcpy(buf, id);
     g -> op = XOR_GATE;
-    g -> id = id;
+    g -> id = buf;
     g -> argsNum = argsNum;
     g -> args = args;
     g -> value = X;
@@ -48,8 +57,10 @@ gate Xor(char *id, int argsNum, gate args[]) {
 
 gate Nand(char *id, int argsNum, gate args[]) {
     gate g = GC_MALLOC(sizeof(struct gate));
+    char *buf = GC_MALLOC(sizeof(char) * (strlen(id) + 1));
+    strcpy(buf, id);
     g -> op = NAND_GATE;
-    g -> id = id;
+    g -> id = buf;
     g -> argsNum = argsNum;
     g -> args = args;
     g -> value = X;
@@ -58,8 +69,10 @@ gate Nand(char *id, int argsNum, gate args[]) {
 
 gate Nor(char *id, int argsNum, gate args[]) {
     gate g = GC_MALLOC(sizeof(struct gate));
+    char *buf = GC_MALLOC(sizeof(char) * (strlen(id) + 1));
+    strcpy(buf, id);
     g -> op = NOR_GATE;
-    g -> id = id;
+    g -> id = buf;
     g -> argsNum = argsNum;
     g -> args = args;
     g -> value = X;
@@ -68,8 +81,10 @@ gate Nor(char *id, int argsNum, gate args[]) {
 
 gate Input(char *id) {
     gate g = GC_MALLOC(sizeof(struct gate));
+    char *buf = GC_MALLOC(sizeof(char) * (strlen(id) + 1));
+    strcpy(buf, id);
     g -> op = INPUT_GATE;
-    g -> id = id;
+    g -> id = buf;
     g -> argsNum = 0;
     g -> args = NULL;
     g -> value = X;
@@ -79,9 +94,11 @@ gate Input(char *id) {
 gate Output(char *id, gate arg) {
     gate g = GC_MALLOC(sizeof(struct gate));
     gate *array = gateArray(1);
+    char *buf = GC_MALLOC(sizeof(char) * (strlen(id) + 1));
+    strcpy(buf, id);
     array[0] = arg;
     g -> op = OUTPUT_GATE;
-    g -> id = id;
+    g -> id = buf;
     g -> argsNum = 1;
     g -> args = array;
     g -> value = X;
@@ -96,6 +113,12 @@ gate *gateArray(int n) {
         array[i] = NULL;
     }
     return array;
+}
+
+gate *addArray(int n, gate *array, gate g) {
+    gate *na = GC_REALLOC(array, sizeof(gate) * (n+1));
+    na[n] = g;
+    return na;
 }
 
 gate *inputArray(int n, char **ids){

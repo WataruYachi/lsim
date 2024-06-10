@@ -7,6 +7,7 @@
 #include "table.h"
 #include "bit.h"
 #include "qm.h"
+#include "y.tab.c"
 
 circuit halfadder() {
     char *inputIds[] = {"x", "y"};
@@ -86,14 +87,8 @@ gate and1() {
 }
 
 int main(int argc, char const *argv[]) {
-    circuit ha = halfadder();
-    circuit aa = andc();
-    int input[2] = {T, T};
-    truthTable tt = makeTruthTable(ha);
-    printTruthTable(tt);
-    truthTable mtt = makeTruthTable(major());
-    printTruthTable(mtt);
-    //qm(major());
-    qmsample(major());
+    extern int yyparse(void);
+    extern FILE *yyin;
+    yyin = fopen("test", "r"); 
     return 0;
 }

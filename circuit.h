@@ -17,5 +17,5 @@ typedef struct circuit *circuit;
 circuit Circuit(char *, int, gate[], int, gate[]);
 bitArray runCircuitWithInput(circuit c, bitArray input);
 truthTable makeTruthTable(circuit);
-
+void printCircuit(circuit c);
 #endif
