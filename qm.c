@@ -41,7 +41,6 @@ table sumOfProducts(truthTable tt, int o) {
     table t = Table(0, tt->inputNum);
     for (int i = 0; i < tt->input->m; i++) {
         if (getBit(getOutputRow(tt,i), o) == T) {
-            printBitArray(tt->inputNum, getInputRow(tt,i));
             addTableRow(t, getInputRow(tt, i));
         }
     }
@@ -98,7 +97,6 @@ int checkNeighbor(int **checkA, int **groupA, table t, table *ntA) {
             }
         }
     }
-    printArray(n, check);
     *checkA = check;
     *groupA = group;
     *ntA = nt;
@@ -211,11 +209,6 @@ table calcEssentialTerms(table ps, table ms, int ***ct) {
         for (int j = 0; j < ps->m; j++) {
             bitArray mt = getTableRow(ms, i);
             if (isInstance(n, getTableRow(ps, j), mt)) {
-                printf("instance pair\n");
-                printBitArray(n, getTableRow(ps,j));
-                printf("\n");
-                printBitArray(n, mt);
-                printf("\n");
                 checkTable[j][i] = 1;
                 index = j;
                 c++;
@@ -231,20 +224,11 @@ table calcEssentialTerms(table ps, table ms, int ***ct) {
             essentialExists[index] = 1;
         }
     }
-    printf("checkTable\n");
+
     for (int i = 0; i < ps->m; i++) {
         for (int j = 0; j < ms->m; j++) {
-            printf("%d,", checkTable[i][j]);
-        }
-        printf("\n");
-    }
-    printArray(ps->m, essentialExists);
-    for (int i = 0; i < ps->m; i++) {
-        for (int j = 0; j < ms->m; j++) {
-            printf("checkTable[%d][%d] = %d, %d\n",i,j,checkTable[i][j],essentialExists[i] );
             if (checkTable[i][j] == 1 && essentialExists[i] == 1) {
                 checkTable[i][j] = 3;
-                printf("bing\n");
             }
         }
     }
@@ -293,13 +277,9 @@ table qm(table ms) {
     int *group;
 
     table ps = calcPrimeImplicant(ms);
-    printf("ps\n");
-    printTable(ps);
 
     int **checkTable;
     table es = calcEssentialTerms(ps, ms, &checkTable);
-    printf("es\n");
-    printTable(es);
 
     int *ignoreRow = GC_MALLOC(sizeof(int) * ps->m);
     int *ignoreCol = GC_MALLOC(sizeof(int) * ms->m);
@@ -311,24 +291,9 @@ table qm(table ms) {
             if (checkTable[i][j] == 2 || checkTable[i][j] == 3) {
                 ignoreRow[i] = 1;
                 ignoreCol[j] = 1;
-                printf("ignore x,y: %d, %d\n", i, j);
             }
         }
     }
-    printf("ignoreRow:");
-    printArray(ps->m, ignoreRow);
-    printf("ignoreCol:");
-    printArray(ms->m, ignoreCol);
-
-    printf("checkTable\n");
-    for (int i = 0; i < ps->m; i++) {
-        for (int j = 0; j < ms->m; j++) {
-            printf("%d,", checkTable[i][j]);
-        }
-        printf("\n");
-    }
-
-
 
     // 残った主項を格納するテーブル
     table *rs = GC_MALLOC(sizeof(table) * ms->m);
@@ -341,9 +306,6 @@ table qm(table ms) {
     for (int i = 0; i < ps->m; i++) {
         for (int j = 0; j < ms->m; j++) {
             if (checkTable[i][j] == 1 && ignoreRow[i] == 0 && ignoreCol[j] == 0) {
-                printf("psi:%d,%d ", i, j);
-                printBitArray(ps->n, getTableRow(ps,i));
-                printf("\n");
                 addTableRow(rs[j], getTableRow(ps, i));
                 rscheck[j] = 1;
             }
@@ -358,9 +320,6 @@ table qm(table ms) {
             }
         }
     }
-    
-    printf("result\n");
-    printTable(es);
 
     return es;
 }
@@ -404,20 +363,20 @@ circuit tableToCircuit(table t, char **inputVars, char *outputVar) {
     return Circuit("new circuit", t->m, input, 1, output); 
 }
 
-circuit minimalizeCircuit(circuit c) {
+void minimalizeCircuit(circuit c) {
     truthTable tt = makeTruthTable(c);
     table t = sumOfProducts(tt, 0);
     table mc = qm(t);
+    printf("minimalized circuit\n");
+    for (int i = 0; i < tt->inputNum; i++) {
+        printf("%s,", tt->inputVars[i]);
+    }
+    printf("\n");
+    printTable(mc);
+
+    //printf("truth table of after minimalizing\n");
+    //circuit nc = tableToCircuit(mc, tt->inputVars, tt->outputVars[0]);
+    //truthTable tt2 = makeTruthTable(nc);
+    //printTruthTable(tt2); 
 }
 
-void qmsample(circuit c) {
-    truthTable tt = makeTruthTable(c);
-    printTruthTable(tt);
-    table t = sumOfProducts(tt, 0);
-    printTable(t);
-    table newt = qm(t);
-    circuit nc = tableToCircuit(newt, tt->inputVars, tt->outputVars[0]); 
-    truthTable ntt = makeTruthTable(c);
-    printTruthTable(ntt);
-    qm(sampleTable());
-}

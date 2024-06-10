@@ -28,7 +28,14 @@ bit getBit(bitArray bs, int i) {
 
 void printBitArray(int n, bitArray bs) {
     for (int i = 0; i < n; i++) {
-        printf("%d,", getBit(bs, i));
+        bit b = getBit(bs, i);
+        if (b == T) {
+            printf("1,");
+        } else if (b == F) {
+            printf("0,");
+        } else {
+            printf("X,");
+        }
     }
     //printf("\n");
 }

@@ -1,7 +1,7 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
+#include <string.h>
 #include "ast.h"
 #include "term.h"
 #include "gate.h"
@@ -57,13 +57,43 @@ termList : term {$$ = addLast(newList(0), $1);}
          ;
 %%
 
+void usage() {
+    printf("usage\n");
+    printf("./lc <option> <file>\n");
+    printf("options:\n");
+    printf(" -m : minimalize input circuit (only single output circuit)\n");
+}
+
 int main (int argc, char *argv[]) {
     extern FILE *yyin;
-    char *filename = argv[1];
-    yyin = fopen(filename, "r");
 
+    if (argc <= 1) {
+        usage();
+        return 0;
+    }
+
+    int mf = 0;
+    char *option;
+    char *file;
+    
+    if (argc == 3) {
+        option = argv[1];
+        file = argv[2];
+        if (strcmp(option, "-m") != 0) {
+            printf("unknow option:%s\n", option);
+            return 1;
+        } else {
+            mf = 1;
+        }
+    } else if (argc == 2) {
+        file = argv[1];
+    }
+
+
+
+    yyin = fopen(file, "r");
     if (yyin == NULL) {
-        fprintf(stderr, "cannot open file\n");
+        fprintf(stderr, "cannot open file:%s\n", file);
         exit(1);
     }
 
@@ -77,6 +107,10 @@ int main (int argc, char *argv[]) {
     printf("truth table of :%s\n", c->id);
     truthTable tt = makeTruthTable(c);
     printTruthTable(tt);
+    
+    if (mf) {
+        minimalizeCircuit(c);
+    }
 
     fclose(yyin);
     return 0;

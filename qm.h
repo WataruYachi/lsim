@@ -4,7 +4,6 @@
 #include "circuit.h"
 
 table qm(table t);
-table minimalizeCircuit(circuit c);
-void qmsample(circuit c);
+void minimalizeCircuit(circuit c);
 
 #endif
