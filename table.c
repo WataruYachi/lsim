@@ -64,11 +64,19 @@ void setTableRow(table t, int y, bitArray r) {
 }
 
 void printTable(table t) {
-    printf("m: %d, n: %d\n", t->m, t->n);
+    //printf("m: %d, n: %d\n", t->m, t->n);
     for (int i = 0; i < t->m; i++) {
         printBitArray(t->n, &t->rows[i]);
         printf("\n");
     }
+}
+
+table copyTable(table t) {
+    table new = Table(0, t->n);
+    for (int i = 0; i < t->m; i++) {
+        addTableRow(new, getTableRow(t,i));
+    }
+    return new;
 }
 
 

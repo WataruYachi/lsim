@@ -6,6 +6,249 @@
 #include "table.h"
 #include "bit.h"
 
+table sumOfProducts(truthTable, int);
+bitArray neighbor(int, bitArray, bitArray);
+table checkNeighborGroup(int i, table *, table *); 
+int countTrueNumber(int, bitArray);
+table loop(table t, table *ps);
+table nubTable(table t);
+int elem(bitArray bs, table t);
+int isInstance(int n, bitArray a, bitArray b);
+bitArray simpleOne(table t);
+int isSimple(int n, bitArray as, bitArray bs);
+
+/* 加法標準形の回路を受け取り、QM法を用いて簡単化する */
+table qm(table t) {
+    table rs = Table(0, t->n);
+    table ps = Table(0, t->n);
+    table tp = copyTable(t);
+    printf("start qm\n");
+    printTable(tp);
+    table next = loop(t, &ps);
+    while (!next->m == 0) {
+        next = loop(next, &ps);
+    }
+    // 主項のテーブル
+    ps = nubTable(ps);
+    printf("nub\n");
+    printTable(ps);
+
+    int *ignoreRow = GC_MALLOC(sizeof(int) * ps->m);
+    int *ignoreCol = GC_MALLOC(sizeof(int) * t->m);
+    // 主項を行、最小項を列にとった表
+    // 1 = >, 2 = ◎, 3 = ○ 
+    int **checkTable = GC_MALLOC(sizeof(int *) * t->m);
+    for (int i = 0; i < t->m; i++) {
+        checkTable[i] = GC_MALLOC(sizeof(int) * ps->m);
+        ignoreCol[i] = 0;
+        for (int j = 0; j < ps->m; j++) {
+            checkTable[i][j] = 0;
+            ignoreRow[j] = 0;
+        }
+    }
+    
+    // 表に>をつける
+    for (int i = 0; i < t->m; i++) {
+        bitArray bs = getTableRow(t, i);
+        for (int j = 0; j < ps->m; j++) {
+            if (isInstance(t->n, getTableRow(ps, j), bs)) {
+                checkTable[i][j] = 1;
+            }
+        }
+    }
+
+    printf("\n");
+    printTable(tp);
+    printTable(ps);
+    
+    for (int j = 0; j < ps->m; j++) {
+        for (int i = 0; i < t->m; i++) {
+            printf("%d ", checkTable[i][j]);
+        }
+        printf("\n");
+    }
+
+
+
+    // 表に◎をつける
+    for (int i = 0; i < t->m; i++) {
+        int p = 0;
+        int sum = 0;
+        for (int j = 0; j < ps->m; j++) {
+            sum += checkTable[i][j];
+            if (checkTable[i][j] == 1) {
+                p = j;
+            }
+        }
+        if (sum == 1) {
+            checkTable[i][p] = 2;
+            ignoreRow[p] = 1;
+            ignoreCol[i] = 1;
+            addTableRow(rs, getTableRow(ps, p));
+            // ○をつける
+            for (int ii = 0; ii < t->m; ii++) {
+                if(checkTable[ii][p] == 1 && !i == ii) {
+                    checkTable[ii][p] = 3;
+                }
+            }
+        }
+    }
+
+    printf("\n");
+
+    for (int j = 0; j < ps->m; j++) {
+        for (int i = 0; i < t->m; i++) {
+            printf("%d ", checkTable[i][j]);
+        }
+        printf("\n");
+    }
+
+    for (int i = 0; i < t->m; i++) {
+        table tmp = Table(0,t->n);
+        for (int j = 0; j < ps->m; j++) {
+            if(ignoreCol[i] == 0 && ignoreRow[j] == 0) {
+                printf("%d,%d\n", i,j);
+                printBitArray(t->n, getTableRow(ps,j));
+                printf("\n");
+                addTableRow(tmp, getTableRow(ps,j));
+            }
+        }
+        if (tmp->m > 0) {
+            printTable(tmp);
+            addTableRow(rs,simpleOne(tmp));
+        }
+    }
+
+    rs = nubTable(rs);
+    printf("ps\n");
+    printTable(rs);
+
+    return rs;
+}
+
+table loop(table t, table *ps) {
+    int m = t->m;
+    int n = t->n;
+
+    table next = Table(0,n);
+    // STEP1 グループ分け
+    // group[i] = n はtable[i]の行がグループn に属していることを表す
+    int *group = GC_MALLOC(sizeof(int) * m);
+
+    for (int i = 0; i < m; i++) {
+        group[i] = countTrueNumber(n, getTableRow(t,i));
+        printf("table[%d]=group%d\n", i, group[i]);
+    }
+    
+    int *check = GC_MALLOC(sizeof(int) * m);
+    // 1 は $ がついていることを、0 は印無し
+    for (int i = 0; i < m; i++) {
+        check[i] = 0;
+    }
+
+    for (int i = 0; i < m; i++) {
+        int gi = group[i];
+        bitArray bi = getTableRow(t, i);
+        for (int j = 0; j < m; j++) {
+            int gj = group[j];
+            if (gi == gj+1) {
+                bitArray bs = neighbor(n, bi, getTableRow(t, j));
+                if (bs == NULL) {
+                    continue;
+                } else {
+                    printf("as");
+                    printBitArray(n, bi);
+                    printf("bs");
+                    printBitArray(n, getTableRow(t,j));
+                    printf("\n");
+                    addTableRow(next, bs);
+                    check[i] = 1;
+                    check[j] = 1;
+                }
+            } else {
+                continue;
+            }
+        }
+    }
+    printTable(next);
+
+    for (int i = 0; i < m; i++) {
+        if (check[i] == 0) {
+            addTableRow(*ps, getTableRow(t, i));
+        }
+    }
+    printf("ps\n");
+    printTable(*ps);
+    return next;
+}
+
+bitArray simpleOne(table t) {
+    if (t->n == 0) return NULL;
+
+    bitArray bs = getTableRow(t,0);
+    for(int i = 1; i < t->m; i++) {
+        bitArray tmp = getTableRow(t,i);
+        if(!isSimple(t->n, bs, tmp)) {
+            bs = getTableRow(t,i);
+        }
+    }
+
+    return bs;
+}
+
+int numOfX(int n, bitArray bs) {
+    int c = 0;
+    for (int i = 0; i < n; i++) {
+        if(getBit(bs, i) == X) {
+            c++;
+        }
+    }
+    return c;
+}
+
+int isSimple(int n, bitArray as, bitArray bs) {
+    int ax = numOfX(n, as);
+    int bx = numOfX(n, bs);
+    if (ax > bx) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+// 重複する要素を削除する
+table nubTable(table t) {
+    int m = t->m;
+    int n = t->n;
+    table s = Table(0,t->n);
+
+    for (int i = 0; i < m; i++) {
+        bitArray bs = getTableRow(t, i);
+        if (elem(bs, s)) {
+            continue;
+        } else {
+            addTableRow(s, bs);
+        }
+    }
+    return s;
+}
+
+int elem(bitArray bs, table t) {
+    for (int i = 0; i < t->m; i++) {
+        if (bitArrayEq(bs, getTableRow(t,i))) {
+            return 1;
+        } else {
+            continue;
+        }
+    }
+    return 0;
+}
+
+/* 
+２つのビット列が論理的隣接性を持つかどうかを判定する
+持つ場合は隣接性のあるビット位置を X で置き換えたビット列を返す
+そうでない場合は、NULLを返す
+*/
+
 bitArray neighbor(int n, bitArray a, bitArray b) {
     bitArray c = BitArray();
     int tm = 0;
@@ -25,6 +268,26 @@ bitArray neighbor(int n, bitArray a, bitArray b) {
         }
     }
     return c;
+}
+
+// bがaのインスタンスかどうか
+int isInstance(int n, bitArray a, bitArray b) {
+    //printf("check instance\n");
+    //printBitArray(n, a);
+    //printf("\n");
+    //printBitArray(n, b);
+    //printf("\n");
+    for (int i = 0; i < n; i++) {
+        bit va = getBit(a, i);
+        bit vb = getBit(b, i);
+        if (va == X || (va == vb)) {
+            continue;
+        } else {
+            return 0;
+        }
+    }
+    //printf("true\n");
+    return 1;
 }
 
 int countTrueNumber(int n, bitArray bs) {
@@ -47,196 +310,6 @@ table sumOfProducts(truthTable tt, int o) {
     return t;
 }
 
-void printArray(int n, int *a) {
-    for (int i = 0; i < n; i++) {
-        printf("%d, ", a[i]);
-    }
-    printf("\n");
-}
-
-int isAllChecked(int n, int *check) {
-    for(int i = 0; i < n; i++) {
-        if (check[i] != 1) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int checkNeighbor(int **checkA, int **groupA, table t, table *ntA) {
-    int m = t->m;
-    int n = t-> n;
-    int c = 0;
-    
-    int *check = GC_MALLOC(sizeof(int) * m);
-    table nt;
-
-    for (int i = 0; i < m; i++) {
-        check[i] = 0;
-    }
-
-    int *group = GC_MALLOC(sizeof(int) * m);
-    for (int i = 0; i < m; i++) {
-        bitArray bs = getTableRow(t, i);
-        int c = countTrueNumber(n, bs);
-        group[i] = c;
-    }
-
-    nt = Table(0, n);
-    bitArray e = NULL;
-    for (int i = 0; i < m; i++) {
-        for (int j = i; j < m; j++) {
-            if (abs(group[i] - group[j]) == 1) {
-                e = neighbor(n, getTableRow(t,i), getTableRow(t,j)); 
-                if (e != NULL) {
-                    check[i] = 1;
-                    check[j] = 1;
-                    addTableRow(nt, e);
-                    c++;
-                }
-            }
-        }
-    }
-    *checkA = check;
-    *groupA = group;
-    *ntA = nt;
-    return c;
-}
-
-// bがaのインスタンスかどうか
-int isInstance(int n, bitArray a, bitArray b) {
-    for (int i = 0; i < n; i++) {
-        bit va = getBit(a, i);
-        bit vb = getBit(b, i);
-        if (va == X || (va == vb)) {
-            continue;
-        } else {
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int elem(table t, bitArray bs) {
-    for (int i = 0; i < t->m; i++) {
-        if (bitArrayEq(getTableRow(t, i), bs)) {
-            return 1;
-        } else {
-            continue;
-        }
-    }
-    return 0;
-}
-
-table calcPrimeImplicant(table t) {
-    table primes = Table(0,t->n);
-    int *check;
-    int *group;
-    int m;
-    int n = t->n;
-    table nt;
-
-    // 初期化
-    table tp = Table(t->m, t->n);
-    for (int i = 0; i < t->m; i++) {
-        setTableRow(tp, i, getTableRow(t, i));
-    }
-
-    while (1) {
-        m = tp->m;
-        nt = Table(0, n);
-        check = GC_MALLOC(sizeof(int) * m);
-        group = GC_MALLOC(sizeof(int) * m);
-        for (int i = 0; i < m; i++) {
-            check[i] = 0;
-            bitArray bs = getTableRow(tp, i);
-            group[i] = countTrueNumber(n, bs);
-        }
-
-        bitArray e = NULL;
-        for (int i = 0; i < m; i++) {
-            for (int j = i; j < m; j++) {
-                if (abs(group[i] - group[j]) == 1) {
-                    e = neighbor(n, getTableRow(tp,i), getTableRow(tp,j));
-                    if (e != NULL) {
-                        check[i] = 1;
-                        check[j] = 1;
-                        addTableRow(nt, e);
-                    }
-                }
-            }
-        }
-
-        for (int i = 0; i < m; i++) {
-            if (check[i] == 0 && !elem(primes, getTableRow(tp, i))) {
-                addTableRow(primes, getTableRow(tp, i));
-            }
-        }
-
-        if (nt->m == 0) {
-            break;
-        } else {
-            tp = nt;
-        }
-    }
-
-    return primes;
-}
-
-
-
-table calcEssentialTerms(table ps, table ms, int ***ct) {
-    table es = Table(0, ps->n);
-    int n = ps->n;
-    int *essentialExists = GC_MALLOC(sizeof(int) * ps->m);
-
-    // 1: >
-    // 2: ◎
-    // 3: ○
-    int **checkTable = GC_MALLOC(sizeof(int*) * ps->m);
-    for (int i = 0; i < ps->m; i++) {
-        checkTable[i] = GC_MALLOC(sizeof(int) * ms->m);
-        essentialExists[i] = 0;
-    }
-
-    
-    int c;
-    int index;
-
-    for (int i = 0; i < ms->m; i++) {
-        c = 0;
-        index = 0;
-        for (int j = 0; j < ps->m; j++) {
-            bitArray mt = getTableRow(ms, i);
-            if (isInstance(n, getTableRow(ps, j), mt)) {
-                checkTable[j][i] = 1;
-                index = j;
-                c++;
-            }
-        }
-
-        if (c == 1) {
-            bitArray bs = getTableRow(ps, index);
-            if (!elem(es, bs)) { 
-                addTableRow(es, bs);
-            }
-            checkTable[index][i] = 2;
-            essentialExists[index] = 1;
-        }
-    }
-
-    for (int i = 0; i < ps->m; i++) {
-        for (int j = 0; j < ms->m; j++) {
-            if (checkTable[i][j] == 1 && essentialExists[i] == 1) {
-                checkTable[i][j] = 3;
-            }
-        }
-    }
-
-    *ct = checkTable; 
-    return es;
-}
-
 int *countXF(int n, bitArray bs) {
     int *c = GC_MALLOC(sizeof(int)*2);
     c[0] = 0;
@@ -249,90 +322,6 @@ int *countXF(int n, bitArray bs) {
         }
     }
     return c;
-}
-
-bitArray mostSimpleTerm(table t) {
-    bitArray bs = getTableRow(t, 0);
-    int *c = countXF(t->n, bs);
-    int *cn;
-    for (int i = 1; i < t->m; i++) {
-        cn = countXF(t->n, getTableRow(t,i));
-        if (cn[0] < c[0]) {
-            bs = getTableRow(t, i);
-        } else if (cn[0] == c[0] && cn[1] < c[0]) {
-            bs = getTableRow(t, i);
-        }
-    }
-    return bs;
-}
-
-table qm(table ms) {
-    //truthTable tt = makeTruthTable(c);
-    table sp = ms;
-    //table t = sumOfProducts(tt, 0);  // 1つ目の出力だけ考える。
-    table nt;
-    int m;
-    int n = ms->n;
-    int *check;
-    int *group;
-
-    table ps = calcPrimeImplicant(ms);
-
-    int **checkTable;
-    table es = calcEssentialTerms(ps, ms, &checkTable);
-
-    int *ignoreRow = GC_MALLOC(sizeof(int) * ps->m);
-    int *ignoreCol = GC_MALLOC(sizeof(int) * ms->m);
-
-    for (int i = 0; i < ps->m; i++) {
-        //ignoreRow[i] = 0;
-        for (int j = 0; j < ms->m; j++) {
-            //ignoreCol[j] = 0;
-            if (checkTable[i][j] == 2 || checkTable[i][j] == 3) {
-                ignoreRow[i] = 1;
-                ignoreCol[j] = 1;
-            }
-        }
-    }
-
-    // 残った主項を格納するテーブル
-    table *rs = GC_MALLOC(sizeof(table) * ms->m);
-    int *rscheck = GC_MALLOC(sizeof(int) * ms->m);
-    for (int i = 0; i < ms->m; i++) {
-        rs[i] = Table(0, ms->n);
-        rscheck[i] = 0;
-    }
-
-    for (int i = 0; i < ps->m; i++) {
-        for (int j = 0; j < ms->m; j++) {
-            if (checkTable[i][j] == 1 && ignoreRow[i] == 0 && ignoreCol[j] == 0) {
-                addTableRow(rs[j], getTableRow(ps, i));
-                rscheck[j] = 1;
-            }
-        }
-    }
-
-    for (int i = 0; i < ms->m; i++) {
-        if (rscheck[i] == 1) {
-            bitArray newr = mostSimpleTerm(rs[i]);
-            if (!elem(es, newr)) {
-                addTableRow(es, newr);
-            }
-        }
-    }
-
-    return es;
-}
-
-table sampleTable() {
-    table t = Table(7, 4);
-    bit bt[7][4] = {{F,F,F,T},{F,T,F,T},{F,T,T,F},{T,F,F,T},{F,T,T,T},{T,T,F,T},{T,T,T,F}};
-    for (int i = 0; i < 7; i++) {
-        for (int j = 0; j < 4; j++) {
-            setTableValue(t, j, i, bt[i][j]);
-        }
-    }
-    return t;
 }
 
 circuit tableToCircuit(table t, char **inputVars, char *outputVar) {
@@ -373,10 +362,18 @@ void minimalizeCircuit(circuit c) {
     }
     printf("\n");
     printTable(mc);
-
-    //printf("truth table of after minimalizing\n");
-    //circuit nc = tableToCircuit(mc, tt->inputVars, tt->outputVars[0]);
-    //truthTable tt2 = makeTruthTable(nc);
-    //printTruthTable(tt2); 
 }
+
+table sampleTable() {
+    table t = Table(7, 4);
+    bit bt[7][4] = {{F,F,F,T},{F,T,F,T},{F,T,T,F},{T,F,F,T},{F,T,T,T},{T,T,F,T},{T,T,T,F}};
+    for (int i = 0; i < 7; i++) {
+        for (int j = 0; j < 4; j++) {
+            setTableValue(t, j, i, bt[i][j]);
+        }
+    }
+    return t;
+}
+
+
 

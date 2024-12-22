@@ -23,6 +23,7 @@ bitArray getTableRow(table t, int y);
 void setTableValue(table t, int x, int y, bit v);
 table appendTable(table, table);
 void printTable(table t);
+table copyTable(table t);
 
 struct truthTable {
     unsigned int inputNum;
