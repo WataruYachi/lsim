@@ -32,10 +32,29 @@ bitArray getTableRow(table t, int y) {
 
 void addTableRow(table t, bitArray r) {
     t->rows = GC_REALLOC(t->rows, sizeof(struct bitArray) * t->m + 1);
+    //printBitArray(t->n, r);
+    //printf("\n-------\n");
     for (int i = 0; i < INT_ARRAY_SIZE; i++) {
         t->rows[t->m].array[i] = r->array[i];
     }
     t->m = t->m + 1;
+    //printf("t->m:%d\n", t->m);
+    //printTable(t);
+    //printf("\n");
+}
+
+table appendTable(table x, table y) {
+    int n = x->n;
+    //printf("x->m:%d, y->m:%d\n", x->m, y->m);
+    table t = Table(0, n);
+    //printTable(t);
+    for (int i = 0; i < x->m; i++) {
+        addTableRow(t, getTableRow(x, i));
+    }
+    for (int i = 0; i < y->m; i++) {
+        addTableRow(t, getTableRow(y, i));
+    }
+    return t;
 }
 
 void setTableRow(table t, int y, bitArray r) {
@@ -45,6 +64,7 @@ void setTableRow(table t, int y, bitArray r) {
 }
 
 void printTable(table t) {
+    printf("m: %d, n: %d\n", t->m, t->n);
     for (int i = 0; i < t->m; i++) {
         printBitArray(t->n, &t->rows[i]);
         printf("\n");

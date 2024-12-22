@@ -1,0 +1,13 @@
+circuit major(w,x,y,z) {
+    let a1 = and(not($w), not($x), not($y), $z)
+    let a2 = and(not($w), $x, not($y), not($z))
+    let a3 = and(not($w), $x, $y, not($z))
+    let a4 = and(not($w), $x, $y, $z)
+    let a5 = and($w, not($x), not($y), not($z))
+    let a6 = and($w, not($x), not($y), $z)
+    let a7 = and($w, not($x), $y, not($z))
+    let a8 = and($w, not($x), $y, $z)
+    let a9 = and($w, $x, $y, $z)
+    let m = or($a1,$a2,$a3,$a4,$a5,$a6,$a7,$a8,$a9) 
+    output($m) 
+}
