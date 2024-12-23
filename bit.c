@@ -13,7 +13,7 @@ bitArray BitArray () {
 
 void setBit(bitArray bs, int i, bit v) {
     uint64_t v64 = (uint64_t)v;
-    bs->array[INT_INDEX(i)] &= ~(3 << BIT_INDEX(i));
+    bs->array[INT_INDEX(i)] &= ~(0x11 << BIT_INDEX(i));
     bs->array[INT_INDEX(i)] |= (v64 << BIT_INDEX(i));
 }
 
@@ -22,8 +22,15 @@ bit getBit(bitArray bs, int i) {
     int ii = bs->array[INT_INDEX(i)];
     int ui = ii & (1 << bi);
     int li = ii & (1 << (bi+1));
-    //printf("ui:%d,li:%d,uili:%d\n", ui,li,(ui | li) >> bi);
     return (ui | li) >> bi;
+}
+
+bitArray copyBitArray(bitArray bs) {
+    bitArray newbs = BitArray();
+    for (int i = 0; i < INT_ARRAY_SIZE; i++) {
+        newbs->array[i] = bs->array[i];
+    }
+    return newbs;
 }
 
 void printBitArray(int n, bitArray bs) {
@@ -52,3 +59,16 @@ int bitArrayEq(bitArray a, bitArray b) {
     return 1;
 }
 
+/*
+int main(void) {
+    bitArray bs = BitArray();
+    setBit(bs,0,F); 
+    setBit(bs,1,T);
+    setBit(bs,2,T);
+    setBit(bs,3,X);
+    printf("%d\n", getBit(bs,0));
+    printf("%d\n", getBit(bs,1));
+    printf("%d\n", getBit(bs,2));
+    printf("%d\n", getBit(bs,3));
+}
+*/

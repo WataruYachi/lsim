@@ -22,6 +22,7 @@ typedef struct bitArray *bitArray;
 bitArray BitArray();
 void setBit(bitArray bs, int i, bit v);
 bit getBit(bitArray bs, int i);
+bitArray copyBitArray(bitArray);
 void printBitArray(int n, bitArray bs);
 int bitArrayEq(bitArray a, bitArray b);
 

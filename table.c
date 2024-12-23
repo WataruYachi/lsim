@@ -10,37 +10,26 @@ table Table(int m, int n) {
     table t = GC_MALLOC(sizeof(struct table));
     t->m = m;
     t->n = n;
-    t->rows = GC_MALLOC(sizeof(struct bitArray) * m);
+    t->rows = GC_MALLOC(sizeof(bitArray) * m);
     return t;
 }
 
 void setTableValue(table t, int x, int y, bit v) {
-    setBit(&t->rows[y], x, v);
+    setBit(t->rows[y], x, v);
 }
 
 bit getTableValue(table t, int x, int y) {
-    return getBit(&t->rows[y], x);
+    return getBit(t->rows[y], x);
 }
 
 bitArray getTableRow(table t, int y) {
-    bitArray r = BitArray();
-    for (int i = 0; i < INT_ARRAY_SIZE; i++) {
-        r->array[i] = t->rows[y].array[i];
-    }
-    return r;
+    return copyBitArray(t->rows[y]);
 }
 
 void addTableRow(table t, bitArray r) {
-    t->rows = GC_REALLOC(t->rows, sizeof(struct bitArray) * t->m + 1);
-    //printBitArray(t->n, r);
-    //printf("\n-------\n");
-    for (int i = 0; i < INT_ARRAY_SIZE; i++) {
-        t->rows[t->m].array[i] = r->array[i];
-    }
+    t->rows = GC_REALLOC(t->rows, sizeof(bitArray) * t->m + 1);
+    t->rows[t->m] = copyBitArray(r);
     t->m = t->m + 1;
-    //printf("t->m:%d\n", t->m);
-    //printTable(t);
-    //printf("\n");
 }
 
 table appendTable(table x, table y) {
@@ -58,15 +47,13 @@ table appendTable(table x, table y) {
 }
 
 void setTableRow(table t, int y, bitArray r) {
-    for (int i = 0; i < INT_ARRAY_SIZE; i++) {
-        t->rows[y].array[i] = r->array[i];
-    }
+    t->rows[y] = copyBitArray(r);
 }
 
 void printTable(table t) {
     //printf("m: %d, n: %d\n", t->m, t->n);
     for (int i = 0; i < t->m; i++) {
-        printBitArray(t->n, &t->rows[i]);
+        printBitArray(t->n, t->rows[i]);
         printf("\n");
     }
 }

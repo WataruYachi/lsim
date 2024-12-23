@@ -21,17 +21,14 @@ int isSimple(int n, bitArray as, bitArray bs);
 table qm(table t) {
     table rs = Table(0, t->n);
     table ps = Table(0, t->n);
-    table tp = copyTable(t);
-    printf("start qm\n");
-    printTable(tp);
+
+    // STEP3 - STEP4 のループ
     table next = loop(t, &ps);
     while (!next->m == 0) {
         next = loop(next, &ps);
     }
     // 主項のテーブル
     ps = nubTable(ps);
-    printf("nub\n");
-    printTable(ps);
 
     int *ignoreRow = GC_MALLOC(sizeof(int) * ps->m);
     int *ignoreCol = GC_MALLOC(sizeof(int) * t->m);
@@ -57,19 +54,6 @@ table qm(table t) {
         }
     }
 
-    printf("\n");
-    printTable(tp);
-    printTable(ps);
-    
-    for (int j = 0; j < ps->m; j++) {
-        for (int i = 0; i < t->m; i++) {
-            printf("%d ", checkTable[i][j]);
-        }
-        printf("\n");
-    }
-
-
-
     // 表に◎をつける
     for (int i = 0; i < t->m; i++) {
         int p = 0;
@@ -94,34 +78,20 @@ table qm(table t) {
         }
     }
 
-    printf("\n");
-
-    for (int j = 0; j < ps->m; j++) {
-        for (int i = 0; i < t->m; i++) {
-            printf("%d ", checkTable[i][j]);
-        }
-        printf("\n");
-    }
-
+    // 簡単なものの組合せを探す
     for (int i = 0; i < t->m; i++) {
         table tmp = Table(0,t->n);
         for (int j = 0; j < ps->m; j++) {
             if(ignoreCol[i] == 0 && ignoreRow[j] == 0) {
-                printf("%d,%d\n", i,j);
-                printBitArray(t->n, getTableRow(ps,j));
-                printf("\n");
                 addTableRow(tmp, getTableRow(ps,j));
             }
         }
         if (tmp->m > 0) {
-            printTable(tmp);
             addTableRow(rs,simpleOne(tmp));
         }
     }
 
     rs = nubTable(rs);
-    printf("ps\n");
-    printTable(rs);
 
     return rs;
 }
@@ -137,7 +107,6 @@ table loop(table t, table *ps) {
 
     for (int i = 0; i < m; i++) {
         group[i] = countTrueNumber(n, getTableRow(t,i));
-        printf("table[%d]=group%d\n", i, group[i]);
     }
     
     int *check = GC_MALLOC(sizeof(int) * m);
@@ -156,11 +125,6 @@ table loop(table t, table *ps) {
                 if (bs == NULL) {
                     continue;
                 } else {
-                    printf("as");
-                    printBitArray(n, bi);
-                    printf("bs");
-                    printBitArray(n, getTableRow(t,j));
-                    printf("\n");
                     addTableRow(next, bs);
                     check[i] = 1;
                     check[j] = 1;
@@ -170,15 +134,12 @@ table loop(table t, table *ps) {
             }
         }
     }
-    printTable(next);
 
     for (int i = 0; i < m; i++) {
         if (check[i] == 0) {
             addTableRow(*ps, getTableRow(t, i));
         }
     }
-    printf("ps\n");
-    printTable(*ps);
     return next;
 }
 
@@ -248,23 +209,23 @@ int elem(bitArray bs, table t) {
 持つ場合は隣接性のあるビット位置を X で置き換えたビット列を返す
 そうでない場合は、NULLを返す
 */
-
 bitArray neighbor(int n, bitArray a, bitArray b) {
     bitArray c = BitArray();
-    int tm = 0;
+    int dn = 0;
     for (int i = 0; i < n; i++) {
-        if(tm > 1) {
-            return NULL;
-        }
         bit va = getBit(a, i);
         bit vb = getBit(b, i);
-        if (va == vb && va != X && vb != X) {
+        if (va == vb) {
             setBit(c, i, va);
-        } else if (va == vb && va == X && vb == X){
+        } else if (!(va == vb) && !(va == X) && !(vb == X)){
             setBit(c, i, X);
+            dn++;
         } else {
-            setBit(c, i, X);
-            tm++;
+            dn++;
+        }
+
+        if(dn > 1) {
+            return NULL;
         }
     }
     return c;

@@ -1,0 +1,5 @@
+circuit major(w,x,y,z) {
+    let m = or(and(not($x),not($y), $z), and(not($w), $x, not($z)),
+    and($w, not($x)), and($x,$y,$z))
+    output($m) 
+}

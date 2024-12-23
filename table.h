@@ -10,7 +10,7 @@
 struct table {
     unsigned int n;
     unsigned int m;
-    bitArray rows;
+    bitArray* rows;
 };
 
 typedef struct table *table;
